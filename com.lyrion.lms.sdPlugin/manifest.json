@@ -1,0 +1,117 @@
+{
+  "Name": "Lyrion Music Server",
+  "Description": "Contrôlez Lyrion Music Server (LMS) depuis le Stream Deck : lecture/pause, stop, pistes, volume et médias nommés.",
+  "Author": "Vibe Code",
+  "Version": "1.0.0",
+  "CodePath": "app.js",
+  "Category": "Lyrion Music Server",
+  "CategoryIcon": "icons/category",
+  "Icon": "icons/plugin",
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "6.0"
+  },
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "10.15"
+    },
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Actions": [
+    {
+      "UUID": "com.lyrion.lms.playpause",
+      "Name": "Lecture / Pause",
+      "Icon": "icons/playpause",
+      "PropertyInspectorPath": "propertyinspector/index.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "icons/playpause",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.lyrion.lms.stop",
+      "Name": "Stop",
+      "Icon": "icons/stop",
+      "PropertyInspectorPath": "propertyinspector/index.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "icons/stop",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.lyrion.lms.next",
+      "Name": "Piste suivante",
+      "Icon": "icons/next",
+      "PropertyInspectorPath": "propertyinspector/index.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "icons/next",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.lyrion.lms.previous",
+      "Name": "Piste précédente",
+      "Icon": "icons/previous",
+      "PropertyInspectorPath": "propertyinspector/index.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "icons/previous",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.lyrion.lms.volumeup",
+      "Name": "Volume +",
+      "Icon": "icons/volumeup",
+      "PropertyInspectorPath": "propertyinspector/index.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "icons/volumeup",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.lyrion.lms.volumedown",
+      "Name": "Volume -",
+      "Icon": "icons/volumedown",
+      "PropertyInspectorPath": "propertyinspector/index.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "icons/volumedown",
+          "TitleAlignment": "middle"
+        }
+      ]
+    },
+    {
+      "UUID": "com.lyrion.lms.playmedia",
+      "Name": "Lire un média",
+      "Icon": "icons/media",
+      "PropertyInspectorPath": "propertyinspector/index.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "icons/media",
+          "TitleAlignment": "middle"
+        }
+      ]
+    }
+  ]
+}

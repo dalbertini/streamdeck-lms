@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Lyrion Music Server</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 12px;
+      color: #d8d8d8;
+      background: #2b2b2b;
+    }
+    .sdpi-wrapper { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .sdpi-item { display: flex; flex-direction: column; gap: 4px; }
+    .sdpi-item label { color: #9a9a9a; font-weight: 600; }
+    .sdpi-item input {
+      background: #1e1e1e;
+      border: 1px solid #4a4a4a;
+      border-radius: 4px;
+      color: #eee;
+      padding: 6px 8px;
+      outline: none;
+    }
+    .sdpi-item input:focus { border-color: #6aa9ff; }
+    .section-title {
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid #4a4a4a;
+      color: #6aa9ff;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="sdpi-wrapper">
+    <div class="section-title">Serveur Lyrion Music Server</div>
+    <div class="sdpi-item">
+      <label for="host">Adresse du serveur</label>
+      <input id="host" type="text" placeholder="127.0.0.1">
+    </div>
+    <div class="sdpi-item">
+      <label for="port">Port JSON-RPC</label>
+      <input id="port" type="number" placeholder="9000">
+    </div>
+    <div class="sdpi-item">
+      <label for="player">Adresse MAC du lecteur (laisser vide = premier lecteur)</label>
+      <input id="player" type="text" placeholder="00:04:20:00:00:00">
+    </div>
+    <div class="section-title hidden" id="media-title">Réglages de la touche</div>
+    <div class="sdpi-item hidden" id="media-item">
+      <label for="media">Nom du média à lire (playlist, favori ou URL)</label>
+      <input id="media" type="text" placeholder="Ma playlist rock">
+    </div>
+  </div>
+  <script>
+    let ws = null;
+    let uuid = null;
+    let actionUUID = null;
+
+    function connectElgatoStreamDeckSocket(inPort, inUUID, inRegisterEvent, inInfo, inAction) {
+      uuid = inUUID;
+      actionUUID = JSON.parse(inAction).action;
+      ws = new WebSocket('ws://127.0.0.1:' + inPort);
+      ws.onopen = function () {
+        ws.send(JSON.stringify({ event: inRegisterEvent, uuid: uuid }));
+        ws.send(JSON.stringify({ event: 'getGlobalSettings', context: uuid }));
+        ws.send(JSON.stringify({ event: 'getSettings', context: uuid }));
+      };
+      ws.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        if (data.event === 'didReceiveGlobalSettings' || data.event === 'getGlobalSettings') {
+          const s = data.payload.settings || {};
+          document.getElementById('host').value = s.host || '';
+          document.getElementById('port').value = s.port || '';
+          document.getElementById('player').value = s.player || '';
+        }
+        if (data.event === 'didReceiveSettings' || data.event === 'getSettings') {
+          const s = data.payload.settings || {};
+          document.getElementById('media').value = s.media || '';
+        }
+      };
+    }
+
+    function saveGlobal(key, value) {
+      if (!ws || ws.readyState !== 1) return;
+      ws.send(JSON.stringify({
+        event: 'setGlobalSettings',
+        context: uuid,
+        payload: { [key]: value }
+      }));
+    }
+
+    function saveSetting(key, value) {
+      if (!ws || ws.readyState !== 1) return;
+      ws.send(JSON.stringify({
+        event: 'setSettings',
+        context: uuid,
+        payload: { [key]: value }
+      }));
+    }
+
+    const hostInput = document.getElementById('host');
+    const portInput = document.getElementById('port');
+    const playerInput = document.getElementById('player');
+    const mediaInput = document.getElementById('media');
+
+    hostInput.addEventListener('input', () => saveGlobal('host', hostInput.value.trim()));
+    portInput.addEventListener('input', () => saveGlobal('port', parseInt(portInput.value, 10) || 9000));
+    playerInput.addEventListener('input', () => saveGlobal('player', playerInput.value.trim()));
+    mediaInput.addEventListener('input', () => saveSetting('media', mediaInput.value.trim()));
+
+    if (actionUUID === 'com.lyrion.lms.playmedia') {
+      document.getElementById('media-title').classList.remove('hidden');
+      document.getElementById('media-item').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
