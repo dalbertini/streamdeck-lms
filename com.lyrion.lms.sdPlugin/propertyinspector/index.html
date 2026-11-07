@@ -60,6 +60,10 @@
       <label for="media">Nom du média à lire (playlist, favori ou URL)</label>
       <input id="media" type="text" placeholder="Ma playlist rock">
     </div>
+    <div class="sdpi-item hidden" id="volume-item">
+      <label for="vol">Niveau de volume à appliquer (0-100, défaut 50)</label>
+      <input id="vol" type="number" min="0" max="100" placeholder="50">
+    </div>
   </div>
   <script>
     let ws = null;
@@ -87,6 +91,7 @@
           const s = data.payload.settings || {};
           document.getElementById('media').value = s.media || '';
           document.getElementById('keyplayer').value = s.player || '';
+          document.getElementById('vol').value = s.volume !== undefined ? s.volume : '';
         }
       };
     }
@@ -114,16 +119,20 @@
     const playerInput = document.getElementById('player');
     const mediaInput = document.getElementById('media');
     const keyPlayerInput = document.getElementById('keyplayer');
+    const volInput = document.getElementById('vol');
 
     hostInput.addEventListener('input', () => saveGlobal('host', hostInput.value.trim()));
     portInput.addEventListener('input', () => saveGlobal('port', parseInt(portInput.value, 10) || 9000));
     playerInput.addEventListener('input', () => saveGlobal('player', playerInput.value.trim()));
     mediaInput.addEventListener('input', () => saveSetting('media', mediaInput.value.trim()));
     keyPlayerInput.addEventListener('input', () => saveSetting('player', keyPlayerInput.value.trim()));
+    volInput.addEventListener('input', () => saveSetting('volume', parseInt(volInput.value, 10)));
 
     if (actionUUID === 'com.lyrion.lms.playmedia') {
-      document.getElementById('media-title').classList.remove('hidden');
       document.getElementById('media-item').classList.remove('hidden');
+    }
+    if (actionUUID === 'com.lyrion.lms.setvolume') {
+      document.getElementById('volume-item').classList.remove('hidden');
     }
   </script>
 </body>

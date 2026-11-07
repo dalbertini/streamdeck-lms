@@ -17,7 +17,8 @@ const state = {
 
 const NOW_PLAYING_ACTION = 'com.lyrion.lms.nowplaying';
 const PLAYER_ACTION = 'com.lyrion.lms.player';
-const nowPlayingTimers = {};
+const VOLUME_ACTION = 'com.lyrion.lms.setvolume';
+const refreshTimers = {};
 
 function send(event, payload) {
   if (state.ws && state.ws.readyState === 1) {
@@ -101,18 +102,30 @@ async function updateNowPlaying(context) {
   }
 }
 
-function startNowPlaying(context) {
-  if (nowPlayingTimers[context]) {
+function startRefresh(context, fn) {
+  if (refreshTimers[context]) {
     return;
   }
-  updateNowPlaying(context);
-  nowPlayingTimers[context] = setInterval(() => updateNowPlaying(context), 5000);
+  fn(context);
+  refreshTimers[context] = setInterval(() => fn(context), 5000);
 }
 
-function stopNowPlaying(context) {
-  if (nowPlayingTimers[context]) {
-    clearInterval(nowPlayingTimers[context]);
-    delete nowPlayingTimers[context];
+function stopRefresh(context) {
+  if (refreshTimers[context]) {
+    clearInterval(refreshTimers[context]);
+    delete refreshTimers[context];
+  }
+}
+
+async function updateVolume(context) {
+  try {
+    const player = await resolvePlayer(context);
+    const r = await lmsRequest([player, ['mixer', 'volume']]);
+    const vol = r.result && r.result.volume;
+    const title = vol !== undefined && vol !== null && vol !== '' ? `${vol}%` : 'Volume ?';
+    send('setTitle', { context, payload: { title, target: 0 } });
+  } catch (err) {
+    send('setTitle', { context, payload: { title: 'LMS hors ligne', target: 0 } });
   }
 }
 
@@ -150,6 +163,12 @@ const actions = {
   'com.lyrion.lms.volumedown': (context) => sendCommand(['mixer', 'volume', '-5'], context),
   'com.lyrion.lms.nowplaying': (context) => updateNowPlaying(context),
   'com.lyrion.lms.player': (context) => cyclePlayer(context),
+  'com.lyrion.lms.setvolume': async (context) => {
+    const v = state.settings[context] && state.settings[context].volume;
+    const level = v === undefined || v === '' ? 50 : Math.max(0, Math.min(100, parseInt(v, 10) || 0));
+    await sendCommand(['mixer', 'volume', level], context);
+    updateVolume(context);
+  },
   'com.lyrion.lms.playmedia': async (context) => {
     const media = state.settings[context] && state.settings[context].media;
     if (!media) {
@@ -177,15 +196,18 @@ function handleEvent(data) {
         state.settings[context] = payload.settings;
       }
       if (action === NOW_PLAYING_ACTION) {
-        startNowPlaying(context);
+        startRefresh(context, updateNowPlaying);
+      }
+      if (action === VOLUME_ACTION) {
+        startRefresh(context, updateVolume);
       }
       if (action === PLAYER_ACTION) {
         showCurrentPlayer(context);
       }
       break;
     case 'willDisappear':
-      if (action === NOW_PLAYING_ACTION) {
-        stopNowPlaying(context);
+      if (action === NOW_PLAYING_ACTION || action === VOLUME_ACTION) {
+        stopRefresh(context);
       }
       break;
     case 'didReceiveSettings':

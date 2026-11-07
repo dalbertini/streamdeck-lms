@@ -36,6 +36,9 @@ globalThis.fetch = async (url, options) => {
       }),
     };
   }
+  if (cmd === 'mixer' && body.params[1][2] === undefined) {
+    return { ok: true, json: async () => ({ result: { volume: '42' } }) };
+  }
   if (cmd === 'status') {
     return {
       ok: true,
@@ -188,4 +191,44 @@ test('player action cycles through LMS players and shows the current one', async
   assert.strictEqual(saved.payload.player, '11:22:33:44:55:66');
   const titleAfter = wsInstance.sent.filter((m) => m.event === 'setTitle' && m.context === context).pop();
   assert.strictEqual(titleAfter.payload.title, 'Squeezebox Touch');
+});
+
+test('setvolume action applies the configured level and displays current volume', async () => {
+  const context = 'ctx-volume';
+  wsInstance.onmessage({
+    data: JSON.stringify({
+      event: 'didReceiveSettings',
+      context,
+      payload: { settings: { volume: 30 } },
+    }),
+  });
+  wsInstance.onmessage({
+    data: JSON.stringify({
+      event: 'willAppear',
+      action: 'com.lyrion.lms.setvolume',
+      context,
+      payload: { settings: { volume: 30 } },
+    }),
+  });
+  await flush();
+  const titleOnAppear = wsInstance.sent.find((m) => m.event === 'setTitle' && m.context === context);
+  assert.ok(titleOnAppear, 'volume shown on appear');
+  assert.strictEqual(titleOnAppear.payload.title, '42%');
+
+  const before = calls.length;
+  keyDown('com.lyrion.lms.setvolume', context);
+  await flush();
+  const setCalls = calls.slice(before).map((c) => c.params[1]);
+  assert.ok(
+    setCalls.some((c) => c[0] === 'mixer' && c[1] === 'volume' && c[2] === 30),
+    'absolute volume level sent'
+  );
+  wsInstance.onmessage({
+    data: JSON.stringify({
+      event: 'willDisappear',
+      action: 'com.lyrion.lms.setvolume',
+      context,
+      payload: {},
+    }),
+  });
 });

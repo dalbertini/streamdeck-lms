@@ -15,6 +15,7 @@ Contrôlez votre serveur Lyrion Music Server depuis le Stream Deck via l'API JSO
 | Lire un média | `playlist play <nom>` (nom de playlist, favori ou URL, réglable par touche) |
 | Titre en cours | aucun appui nécessaire : la touche affiche « Artiste - Titre » et se rafraîchit toutes les 5 s (appuyer sur la touche force le rafraîchissement) |
 | Choisir le lecteur | chaque appui passe au lecteur LMS suivant (Squeezebox Radio, Touch…) et affiche son nom sur la touche ; le choix devient le lecteur global |
+| Régler le volume | applique le niveau réglé dans les propriétés de la touche (0-100) et affiche le volume actuel en % sur la touche (rafraîchi toutes les 5 s) |
 
 ## Installation
 
@@ -29,6 +30,7 @@ Contrôlez votre serveur Lyrion Music Server depuis le Stream Deck via l'API JSO
    - **Adresse MAC du lecteur** : laisser vide pour utiliser le premier lecteur trouvé, ou indiquer la MAC (ex. `00:04:20:xx:xx:xx`) pour cibler un lecteur précis ; la touche « Choisir le lecteur » permet aussi de changer de lecteur directement depuis le Stream Deck
    - **Lecteur ciblé par cette touche** (réglage de la touche) : MAC optionnelle pour piloter un lecteur précis depuis cette touche, indépendamment du réglage global
    - Pour l'action « Lire un média » : le nom du média à lancer.
+   - Pour l'action « Régler le volume » : le niveau de volume (0-100) à appliquer à chaque appui.
 
 ## Remarques
 

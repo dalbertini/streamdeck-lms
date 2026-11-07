@@ -114,6 +114,21 @@
       ]
     },
     {
+      "UUID": "com.lyrion.lms.setvolume",
+      "Name": "Régler le volume",
+      "Icon": "icons/volume",
+      "PropertyInspectorPath": "propertyinspector/index.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "icons/volume",
+          "TitleAlignment": "middle",
+          "TitleColor": "#ffffff",
+          "FontSize": "14"
+        }
+      ]
+    },
+    {
       "UUID": "com.lyrion.lms.player",
       "Name": "Choisir le lecteur",
       "Icon": "icons/player",
