@@ -114,6 +114,21 @@
       ]
     },
     {
+      "UUID": "com.lyrion.lms.player",
+      "Name": "Choisir le lecteur",
+      "Icon": "icons/player",
+      "PropertyInspectorPath": "propertyinspector/index.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "icons/player",
+          "TitleAlignment": "middle",
+          "TitleColor": "#ffffff",
+          "FontSize": "12"
+        }
+      ]
+    },
+    {
       "UUID": "com.lyrion.lms.nowplaying",
       "Name": "Titre en cours",
       "Icon": "icons/nowplaying",

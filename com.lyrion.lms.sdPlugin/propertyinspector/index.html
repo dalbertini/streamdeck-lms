@@ -51,7 +51,11 @@
       <label for="player">Adresse MAC du lecteur (laisser vide = premier lecteur)</label>
       <input id="player" type="text" placeholder="00:04:20:00:00:00">
     </div>
-    <div class="section-title hidden" id="media-title">Réglages de la touche</div>
+    <div class="section-title">Réglages de la touche</div>
+    <div class="sdpi-item">
+      <label for="keyplayer">Lecteur ciblé par cette touche (MAC, laisser vide = lecteur global)</label>
+      <input id="keyplayer" type="text" placeholder="00:04:20:00:00:00">
+    </div>
     <div class="sdpi-item hidden" id="media-item">
       <label for="media">Nom du média à lire (playlist, favori ou URL)</label>
       <input id="media" type="text" placeholder="Ma playlist rock">
@@ -82,6 +86,7 @@
         if (data.event === 'didReceiveSettings' || data.event === 'getSettings') {
           const s = data.payload.settings || {};
           document.getElementById('media').value = s.media || '';
+          document.getElementById('keyplayer').value = s.player || '';
         }
       };
     }
@@ -108,11 +113,13 @@
     const portInput = document.getElementById('port');
     const playerInput = document.getElementById('player');
     const mediaInput = document.getElementById('media');
+    const keyPlayerInput = document.getElementById('keyplayer');
 
     hostInput.addEventListener('input', () => saveGlobal('host', hostInput.value.trim()));
     portInput.addEventListener('input', () => saveGlobal('port', parseInt(portInput.value, 10) || 9000));
     playerInput.addEventListener('input', () => saveGlobal('player', playerInput.value.trim()));
     mediaInput.addEventListener('input', () => saveSetting('media', mediaInput.value.trim()));
+    keyPlayerInput.addEventListener('input', () => saveSetting('player', keyPlayerInput.value.trim()));
 
     if (actionUUID === 'com.lyrion.lms.playmedia') {
       document.getElementById('media-title').classList.remove('hidden');

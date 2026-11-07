@@ -9,12 +9,14 @@ if (!WebSocketImpl) {
 
 const state = {
   ws: null,
+  pluginUUID: null,
   globalSettings: { host: '127.0.0.1', port: 9000, player: '' },
   settings: {},
   playerMac: null,
 };
 
 const NOW_PLAYING_ACTION = 'com.lyrion.lms.nowplaying';
+const PLAYER_ACTION = 'com.lyrion.lms.player';
 const nowPlayingTimers = {};
 
 function send(event, payload) {
@@ -45,15 +47,23 @@ async function lmsRequest(params) {
   return json;
 }
 
-async function resolvePlayer() {
+async function listPlayers() {
+  const r = await lmsRequest(['', ['players', 0, 20]]);
+  return (r.result && r.result.players) || [];
+}
+
+async function resolvePlayer(context) {
+  const override = context && state.settings[context] && state.settings[context].player;
+  if (override) {
+    return override;
+  }
   if (state.globalSettings.player) {
     return state.globalSettings.player;
   }
   if (state.playerMac) {
     return state.playerMac;
   }
-  const r = await lmsRequest(['', ['players', 0, 20]]);
-  const players = (r.result && r.result.players) || [];
+  const players = await listPlayers();
   if (!players.length) {
     throw new Error('Aucun lecteur trouvé sur le serveur LMS');
   }
@@ -61,13 +71,13 @@ async function resolvePlayer() {
   return state.playerMac;
 }
 
-async function sendCommand(cmd) {
-  const player = await resolvePlayer();
+async function sendCommand(cmd, context) {
+  const player = await resolvePlayer(context);
   return lmsRequest([player, cmd]);
 }
 
-async function togglePlayPause() {
-  const player = await resolvePlayer();
+async function togglePlayPause(context) {
+  const player = await resolvePlayer(context);
   const r = await lmsRequest([player, ['status', '-', 1, '']]);
   const mode = r.result && r.result.mode;
   return lmsRequest([player, mode === 'play' ? ['pause'] : ['play']]);
@@ -75,7 +85,7 @@ async function togglePlayPause() {
 
 async function updateNowPlaying(context) {
   try {
-    const player = await resolvePlayer();
+    const player = await resolvePlayer(context);
     const r = await lmsRequest([player, ['status', '-', 1, 'tags:tal']]);
     const result = r.result || {};
     const track = (result.playlist_loop && result.playlist_loop[0]) || {};
@@ -106,20 +116,46 @@ function stopNowPlaying(context) {
   }
 }
 
+async function showCurrentPlayer(context) {
+  try {
+    const players = await listPlayers();
+    const current = state.globalSettings.player || state.playerMac;
+    const p = players.find((pl) => pl.playerid === current) || players[0];
+    send('setTitle', { context, payload: { title: p ? p.name : 'Aucun lecteur', target: 0 } });
+  } catch (err) {
+    send('setTitle', { context, payload: { title: 'LMS hors ligne', target: 0 } });
+  }
+}
+
+async function cyclePlayer(context) {
+  const players = await listPlayers();
+  if (!players.length) {
+    throw new Error('Aucun lecteur trouvé sur le serveur LMS');
+  }
+  const current = state.globalSettings.player || state.playerMac || '';
+  const idx = players.findIndex((p) => p.playerid === current);
+  const next = players[(idx + 1) % players.length];
+  state.globalSettings.player = next.playerid;
+  state.playerMac = next.playerid;
+  send('setGlobalSettings', { context: state.pluginUUID, payload: { player: next.playerid } });
+  send('setTitle', { context, payload: { title: next.name, target: 0 } });
+}
+
 const actions = {
-  'com.lyrion.lms.playpause': () => togglePlayPause(),
-  'com.lyrion.lms.stop': () => sendCommand(['stop']),
-  'com.lyrion.lms.next': () => sendCommand(['playlist', 'index', '+1']),
-  'com.lyrion.lms.previous': () => sendCommand(['playlist', 'index', '-1']),
-  'com.lyrion.lms.volumeup': () => sendCommand(['mixer', 'volume', '+5']),
-  'com.lyrion.lms.volumedown': () => sendCommand(['mixer', 'volume', '-5']),
+  'com.lyrion.lms.playpause': (context) => togglePlayPause(context),
+  'com.lyrion.lms.stop': (context) => sendCommand(['stop'], context),
+  'com.lyrion.lms.next': (context) => sendCommand(['playlist', 'index', '+1'], context),
+  'com.lyrion.lms.previous': (context) => sendCommand(['playlist', 'index', '-1'], context),
+  'com.lyrion.lms.volumeup': (context) => sendCommand(['mixer', 'volume', '+5'], context),
+  'com.lyrion.lms.volumedown': (context) => sendCommand(['mixer', 'volume', '-5'], context),
   'com.lyrion.lms.nowplaying': (context) => updateNowPlaying(context),
+  'com.lyrion.lms.player': (context) => cyclePlayer(context),
   'com.lyrion.lms.playmedia': async (context) => {
     const media = state.settings[context] && state.settings[context].media;
     if (!media) {
       throw new Error('Nom du média non configuré dans les réglages de la touche');
     }
-    return sendCommand(['playlist', 'play', media]);
+    return sendCommand(['playlist', 'play', media], context);
   },
 };
 
@@ -142,6 +178,9 @@ function handleEvent(data) {
       }
       if (action === NOW_PLAYING_ACTION) {
         startNowPlaying(context);
+      }
+      if (action === PLAYER_ACTION) {
+        showCurrentPlayer(context);
       }
       break;
     case 'willDisappear':
@@ -183,6 +222,7 @@ function connect() {
   const port = getArg('-port');
   const uuid = getArg('-pluginUUID');
   const registerEvent = getArg('-registerEvent');
+  state.pluginUUID = uuid;
   const ws = new WebSocketImpl(`ws://127.0.0.1:${port}`);
   state.ws = ws;
   ws.onopen = () => {

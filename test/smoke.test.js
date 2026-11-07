@@ -24,7 +24,17 @@ globalThis.fetch = async (url, options) => {
   calls.push({ url, params: body.params });
   const cmd = body.params[1] && body.params[1][0];
   if (cmd === 'players') {
-    return { ok: true, json: async () => ({ result: { players: [{ playerid: 'aa:bb:cc:dd:ee:ff' }] } }) };
+    return {
+      ok: true,
+      json: async () => ({
+        result: {
+          players: [
+            { playerid: 'aa:bb:cc:dd:ee:ff', name: 'Squeezebox Radio' },
+            { playerid: '11:22:33:44:55:66', name: 'Squeezebox Touch' },
+          ],
+        },
+      }),
+    };
   }
   if (cmd === 'status') {
     return {
@@ -134,4 +144,48 @@ test('nowplaying action displays the current track title on the key', async () =
       payload: {},
     }),
   });
+});
+
+test('per-key player override targets the configured player', async () => {
+  const context = 'ctx-override';
+  wsInstance.onmessage({
+    data: JSON.stringify({
+      event: 'didReceiveSettings',
+      context,
+      payload: { settings: { player: '11:22:33:44:55:66' } },
+    }),
+  });
+  const before = calls.length;
+  keyDown('com.lyrion.lms.next', context);
+  await flush();
+  const overrideCalls = calls.slice(before).filter((c) => c.params[1] && c.params[1][0] !== 'players');
+  assert.ok(overrideCalls.length > 0, 'command sent');
+  assert.ok(
+    overrideCalls.every((c) => c.params[0] === '11:22:33:44:55:66'),
+    'per-key override MAC used'
+  );
+});
+
+test('player action cycles through LMS players and shows the current one', async () => {
+  const context = 'ctx-player';
+  wsInstance.onmessage({
+    data: JSON.stringify({
+      event: 'willAppear',
+      action: 'com.lyrion.lms.player',
+      context,
+      payload: { settings: {} },
+    }),
+  });
+  await flush();
+  const titleOnAppear = wsInstance.sent.find((m) => m.event === 'setTitle' && m.context === context);
+  assert.ok(titleOnAppear, 'player name shown on appear');
+  assert.strictEqual(titleOnAppear.payload.title, 'Squeezebox Radio');
+
+  keyDown('com.lyrion.lms.player', context);
+  await flush();
+  const saved = wsInstance.sent.find((m) => m.event === 'setGlobalSettings');
+  assert.ok(saved, 'player choice persisted globally');
+  assert.strictEqual(saved.payload.player, '11:22:33:44:55:66');
+  const titleAfter = wsInstance.sent.filter((m) => m.event === 'setTitle' && m.context === context).pop();
+  assert.strictEqual(titleAfter.payload.title, 'Squeezebox Touch');
 });
