@@ -6,6 +6,9 @@ if (!WebSocketImpl) {
     WebSocketImpl = null;
   }
 }
+if (!WebSocketImpl) {
+  WebSocketImpl = require('./miniws');
+}
 
 const state = {
   ws: null,
@@ -314,7 +317,7 @@ function getArg(name) {
 function connect() {
   try {
     if (!WebSocketImpl) {
-      console.error('WebSocket indisponible : installez le module "ws" dans le dossier du plugin (npm i ws)');
+      console.error('WebSocket indisponible');
       return;
     }
     const port = getArg('-port');

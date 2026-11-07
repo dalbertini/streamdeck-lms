@@ -49,5 +49,5 @@ Contrôlez votre serveur Lyrion Music Server depuis le Stream Deck via l'API JSO
 
 
 - Si une erreur survient (serveur injoignable, aucun lecteur…), un triangle rouge s'affiche brièvement sur la touche.
-- Le plugin utilise `fetch` (Node 18+, fourni par Stream Deck 6+) et `WebSocket` global ; sur une ancienne version, exécutez `npm i ws` dans le dossier du plugin.
+- Le plugin utilise `fetch` (Node 18+, fourni par Stream Deck 6+) et `WebSocket` ; si aucun des deux n'est disponible dans le runtime, un mini-client WebSocket interne (`miniws.js`, zéro dépendance) prend le relais automatiquement.
 - L'API JSON-RPC de LMS doit être active : Réglages LMS → Avancé → Réseau → « Activer l'interface JSON-RPC » (activée par défaut sur le port 9000).
