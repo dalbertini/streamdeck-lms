@@ -21,6 +21,14 @@ Contrôlez votre serveur Lyrion Music Server depuis le Stream Deck via l'API JSO
 
 ## Installation
 
+### Méthode rapide (package installable)
+
+1. Téléchargez `dist/com.lyrion.lms.streamDeckPlugin` depuis ce dépôt.
+2. Double-cliquez dessus : le plugin s'installe automatiquement.
+3. Redémarrez le logiciel Stream Deck si demandé.
+
+### Méthode manuelle
+
 1. Copiez le dossier `com.lyrion.lms.sdPlugin` dans le dossier des plugins :
    - **Windows** : `%appdata%\Elgato\StreamDeck\Plugins\`
    - **macOS** : `~/Library/Application Support/com.elgato.StreamDeck/Plugins/`
