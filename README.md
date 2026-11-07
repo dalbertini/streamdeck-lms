@@ -16,6 +16,8 @@ Contrôlez votre serveur Lyrion Music Server depuis le Stream Deck via l'API JSO
 | Titre en cours | aucun appui nécessaire : la touche affiche « Artiste - Titre » et se rafraîchit toutes les 5 s (appuyer sur la touche force le rafraîchissement) |
 | Choisir le lecteur | chaque appui passe au lecteur LMS suivant (Squeezebox Radio, Touch…) et affiche son nom sur la touche ; le choix devient le lecteur global |
 | Régler le volume | applique le niveau réglé dans les propriétés de la touche (0-100) et affiche le volume actuel en % sur la touche (rafraîchi toutes les 5 s) |
+| Cycler les favoris | chaque appui lance le favori suivant du compte LMS (les entrées de type menu sont ignorées) et affiche son nom sur la touche |
+| Cycler les médias | chaque appui lance la cible suivante d'une liste configurée par touche (`Nom=cible; …`, cible = URL de flux ou nom de playlist) — pratique pour Radio Paradise / Qobuz sans passer par leurs menus |
 
 ## Installation
 
@@ -31,6 +33,7 @@ Contrôlez votre serveur Lyrion Music Server depuis le Stream Deck via l'API JSO
    - **Lecteur ciblé par cette touche** (réglage de la touche) : MAC optionnelle pour piloter un lecteur précis depuis cette touche, indépendamment du réglage global
    - Pour l'action « Lire un média » : le nom du média à lancer.
    - Pour l'action « Régler le volume » : le niveau de volume (0-100) à appliquer à chaque appui.
+   - Pour l'action « Cycler les médias » : la liste des médias, séparés par `;`, au format `Nom=cible` (ex. `Radio Paradise=http://stream.radioparadise.com/aac-320; Qobuz=Ma playlist Qobuz`).
 
 ## Remarques
 

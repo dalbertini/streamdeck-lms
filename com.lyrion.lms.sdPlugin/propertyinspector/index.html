@@ -64,6 +64,10 @@
       <label for="vol">Niveau de volume à appliquer (0-100, défaut 50)</label>
       <input id="vol" type="number" min="0" max="100" placeholder="50">
     </div>
+    <div class="sdpi-item hidden" id="medias-item">
+      <label for="medias">Médias à cycler, séparés par ; — format « Nom=cible » (cible = URL ou nom de playlist)</label>
+      <input id="medias" type="text" placeholder="Radio Paradise=http://stream.radioparadise.com/aac-320; Qobuz=Ma playlist Qobuz">
+    </div>
   </div>
   <script>
     let ws = null;
@@ -92,6 +96,7 @@
           document.getElementById('media').value = s.media || '';
           document.getElementById('keyplayer').value = s.player || '';
           document.getElementById('vol').value = s.volume !== undefined ? s.volume : '';
+          document.getElementById('medias').value = s.medias || '';
         }
       };
     }
@@ -120,6 +125,7 @@
     const mediaInput = document.getElementById('media');
     const keyPlayerInput = document.getElementById('keyplayer');
     const volInput = document.getElementById('vol');
+    const mediasInput = document.getElementById('medias');
 
     hostInput.addEventListener('input', () => saveGlobal('host', hostInput.value.trim()));
     portInput.addEventListener('input', () => saveGlobal('port', parseInt(portInput.value, 10) || 9000));
@@ -127,12 +133,16 @@
     mediaInput.addEventListener('input', () => saveSetting('media', mediaInput.value.trim()));
     keyPlayerInput.addEventListener('input', () => saveSetting('player', keyPlayerInput.value.trim()));
     volInput.addEventListener('input', () => saveSetting('volume', parseInt(volInput.value, 10)));
+    mediasInput.addEventListener('input', () => saveSetting('medias', mediasInput.value));
 
     if (actionUUID === 'com.lyrion.lms.playmedia') {
       document.getElementById('media-item').classList.remove('hidden');
     }
     if (actionUUID === 'com.lyrion.lms.setvolume') {
       document.getElementById('volume-item').classList.remove('hidden');
+    }
+    if (actionUUID === 'com.lyrion.lms.cyclemedia') {
+      document.getElementById('medias-item').classList.remove('hidden');
     }
   </script>
 </body>

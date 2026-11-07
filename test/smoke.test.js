@@ -36,6 +36,20 @@ globalThis.fetch = async (url, options) => {
       }),
     };
   }
+  if (cmd === 'favorites' && body.params[1][1] === 'items') {
+    return {
+      ok: true,
+      json: async () => ({
+        result: {
+          items: [
+            { item_id: '1', name: 'Radio Paradise (menu)', type: 'menu' },
+            { item_id: '2', name: 'Playlist Rock', type: 'playlist' },
+            { item_id: '3', name: 'Radio X', type: 'audio' },
+          ],
+        },
+      }),
+    };
+  }
   if (cmd === 'mixer' && body.params[1][2] === undefined) {
     return { ok: true, json: async () => ({ result: { volume: '42' } }) };
   }
@@ -231,4 +245,42 @@ test('setvolume action applies the configured level and displays current volume'
       payload: {},
     }),
   });
+});
+
+test('favorites action cycles playable favorites and skips menus', async () => {
+  const context = 'ctx-fav';
+  keyDown('com.lyrion.lms.favorites', context);
+  await flush();
+  keyDown('com.lyrion.lms.favorites', context);
+  await flush();
+  const favPlays = calls
+    .map((c) => c.params[1])
+    .filter((c) => c[0] === 'favorites' && c[1] === 'playlist' && c[2] === 'play')
+    .map((c) => c[3].item_id);
+  assert.deepStrictEqual(favPlays, ['2', '3']);
+  const titles = wsInstance.sent.filter((m) => m.event === 'setTitle' && m.context === context).map((m) => m.payload.title);
+  assert.deepStrictEqual(titles, ['Playlist Rock', 'Radio X']);
+});
+
+test('cyclemedia action cycles configured media targets', async () => {
+  const context = 'ctx-cycle';
+  wsInstance.onmessage({
+    data: JSON.stringify({
+      event: 'didReceiveSettings',
+      context,
+      payload: { settings: { medias: 'Radio Paradise=http://stream.radioparadise.com/aac-320; Qobuz=Ma playlist Qobuz' } },
+    }),
+  });
+  keyDown('com.lyrion.lms.cyclemedia', context);
+  await flush();
+  keyDown('com.lyrion.lms.cyclemedia', context);
+  await flush();
+  const plays = calls
+    .map((c) => c.params[1])
+    .filter((c) => c[0] === 'playlist' && c[1] === 'play')
+    .map((c) => c[2]);
+  assert.ok(plays.includes('http://stream.radioparadise.com/aac-320'), 'Radio Paradise stream played');
+  assert.ok(plays.includes('Ma playlist Qobuz'), 'Qobuz target played');
+  const titles = wsInstance.sent.filter((m) => m.event === 'setTitle' && m.context === context).map((m) => m.payload.title);
+  assert.deepStrictEqual(titles, ['Radio Paradise', 'Qobuz']);
 });

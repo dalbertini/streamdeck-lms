@@ -18,6 +18,8 @@ const state = {
 const NOW_PLAYING_ACTION = 'com.lyrion.lms.nowplaying';
 const PLAYER_ACTION = 'com.lyrion.lms.player';
 const VOLUME_ACTION = 'com.lyrion.lms.setvolume';
+const FAVORITES_ACTION = 'com.lyrion.lms.favorites';
+const CYCLEMEDIA_ACTION = 'com.lyrion.lms.cyclemedia';
 const refreshTimers = {};
 
 function send(event, payload) {
@@ -154,6 +156,71 @@ async function cyclePlayer(context) {
   send('setTitle', { context, payload: { title: next.name, target: 0 } });
 }
 
+async function listFavorites() {
+  const r = await lmsRequest(['', ['favorites', 'items', 0, 100]]);
+  const items = (r.result && r.result.items) || [];
+  return items.filter((it) => it.type && it.type !== 'menu' && it.type !== 'favorites');
+}
+
+async function cycleFavorites(context) {
+  const items = await listFavorites();
+  if (!items.length) {
+    throw new Error('Aucun favori lisible trouvé sur le compte LMS');
+  }
+  const current = state.globalSettings.favIndex;
+  const idx = ((typeof current === 'number' ? current : -1) + 1) % items.length;
+  const item = items[idx];
+  state.globalSettings.favIndex = idx;
+  send('setGlobalSettings', { context: state.pluginUUID, payload: { favIndex: idx } });
+  await sendCommand(['favorites', 'playlist', 'play', { item_id: item.item_id }], context);
+  send('setTitle', { context, payload: { title: item.name, target: 0 } });
+}
+
+async function showCurrentFavorite(context) {
+  try {
+    const items = await listFavorites();
+    const idx = typeof state.globalSettings.favIndex === 'number' ? state.globalSettings.favIndex : 0;
+    const item = items[idx % Math.max(items.length, 1)];
+    send('setTitle', { context, payload: { title: item ? item.name : 'Favoris', target: 0 } });
+  } catch (err) {
+    send('setTitle', { context, payload: { title: 'LMS hors ligne', target: 0 } });
+  }
+}
+
+function parseMedias(raw) {
+  return String(raw || '')
+    .split(';')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const i = entry.indexOf('=');
+      return i > 0
+        ? { label: entry.slice(0, i).trim(), target: entry.slice(i + 1).trim() }
+        : { label: entry, target: entry };
+    });
+}
+
+async function cycleMedia(context) {
+  const s = state.settings[context] || {};
+  const entries = parseMedias(s.medias);
+  if (!entries.length) {
+    throw new Error('Liste de médias non configurée dans les réglages de la touche');
+  }
+  const idx = (typeof s.cycleIndex === 'number' ? s.cycleIndex + 1 : 0) % entries.length;
+  state.settings[context] = Object.assign({}, s, { cycleIndex: idx });
+  const entry = entries[idx];
+  await sendCommand(['playlist', 'play', entry.target], context);
+  send('setTitle', { context, payload: { title: entry.label, target: 0 } });
+}
+
+function showCurrentMedia(context) {
+  const s = state.settings[context] || {};
+  const entries = parseMedias(s.medias);
+  const idx = typeof s.cycleIndex === 'number' ? s.cycleIndex : 0;
+  const entry = entries[idx % Math.max(entries.length, 1)];
+  send('setTitle', { context, payload: { title: entry ? entry.label : 'Médias', target: 0 } });
+}
+
 const actions = {
   'com.lyrion.lms.playpause': (context) => togglePlayPause(context),
   'com.lyrion.lms.stop': (context) => sendCommand(['stop'], context),
@@ -163,6 +230,8 @@ const actions = {
   'com.lyrion.lms.volumedown': (context) => sendCommand(['mixer', 'volume', '-5'], context),
   'com.lyrion.lms.nowplaying': (context) => updateNowPlaying(context),
   'com.lyrion.lms.player': (context) => cyclePlayer(context),
+  'com.lyrion.lms.favorites': (context) => cycleFavorites(context),
+  'com.lyrion.lms.cyclemedia': (context) => cycleMedia(context),
   'com.lyrion.lms.setvolume': async (context) => {
     const v = state.settings[context] && state.settings[context].volume;
     const level = v === undefined || v === '' ? 50 : Math.max(0, Math.min(100, parseInt(v, 10) || 0));
@@ -203,6 +272,12 @@ function handleEvent(data) {
       }
       if (action === PLAYER_ACTION) {
         showCurrentPlayer(context);
+      }
+      if (action === FAVORITES_ACTION) {
+        showCurrentFavorite(context);
+      }
+      if (action === CYCLEMEDIA_ACTION) {
+        showCurrentMedia(context);
       }
       break;
     case 'willDisappear':

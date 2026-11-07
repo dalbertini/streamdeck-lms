@@ -114,6 +114,36 @@
       ]
     },
     {
+      "UUID": "com.lyrion.lms.favorites",
+      "Name": "Cycler les favoris",
+      "Icon": "icons/favorites",
+      "PropertyInspectorPath": "propertyinspector/index.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "icons/favorites",
+          "TitleAlignment": "middle",
+          "TitleColor": "#ffffff",
+          "FontSize": "12"
+        }
+      ]
+    },
+    {
+      "UUID": "com.lyrion.lms.cyclemedia",
+      "Name": "Cycler les médias",
+      "Icon": "icons/cyclemedia",
+      "PropertyInspectorPath": "propertyinspector/index.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "icons/cyclemedia",
+          "TitleAlignment": "middle",
+          "TitleColor": "#ffffff",
+          "FontSize": "12"
+        }
+      ]
+    },
+    {
       "UUID": "com.lyrion.lms.setvolume",
       "Name": "Régler le volume",
       "Icon": "icons/volume",
