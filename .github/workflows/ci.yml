@@ -14,8 +14,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Validate manifest.json
-        run: node -e "JSON.parse(require('fs').readFileSync('com.lyrion.lms.sdPlugin/manifest.json','utf8')); console.log('manifest.json OK')"
+      - name: Validate manifest.json and referenced files
+        run: |
+          node -e "
+          const fs = require('fs'), path = require('path');
+          const m = JSON.parse(fs.readFileSync('com.lyrion.lms.sdPlugin/manifest.json','utf8'));
+          const refs = [m.Icon, m.CategoryIcon, m.CodePath, ...m.Actions.flatMap(a => [a.Icon, a.PropertyInspectorPath, ...a.States.map(s => s.Image)])];
+          for (const r of refs) { if (!fs.existsSync(path.join('com.lyrion.lms.sdPlugin', r))) throw new Error('fichier manquant: ' + r); }
+          console.log('manifest.json OK,', refs.length, 'fichiers référencés présents');
+          "
       - name: Syntax check app.js
         run: node --check com.lyrion.lms.sdPlugin/app.js
       - name: Run smoke tests

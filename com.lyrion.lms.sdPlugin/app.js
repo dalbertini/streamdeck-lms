@@ -312,36 +312,40 @@ function getArg(name) {
 }
 
 function connect() {
-  if (!WebSocketImpl) {
-    console.error('WebSocket indisponible : installez le module "ws" dans le dossier du plugin (npm i ws)');
-    process.exit(1);
-  }
-  const port = getArg('-port');
-  const uuid = getArg('-pluginUUID');
-  const registerEvent = getArg('-registerEvent');
-  state.pluginUUID = uuid;
-  const ws = new WebSocketImpl(`ws://127.0.0.1:${port}`);
-  state.ws = ws;
-  ws.onopen = () => {
-    ws.send(JSON.stringify({ event: registerEvent, uuid }));
-    send('getGlobalSettings', { context: uuid });
-  };
-  ws.onmessage = (msg) => {
-    const raw = msg.data !== undefined ? msg.data : msg;
-    let data;
-    try {
-      data = JSON.parse(raw);
-    } catch (e) {
+  try {
+    if (!WebSocketImpl) {
+      console.error('WebSocket indisponible : installez le module "ws" dans le dossier du plugin (npm i ws)');
       return;
     }
-    handleEvent(data);
-  };
-  ws.onerror = (err) => {
-    console.error('WebSocket :', err.message || err);
-  };
-  ws.onclose = () => {
-    process.exit(0);
-  };
+    const port = getArg('-port');
+    const uuid = getArg('-pluginUUID');
+    const registerEvent = getArg('-registerEvent');
+    state.pluginUUID = uuid;
+    const ws = new WebSocketImpl(`ws://127.0.0.1:${port}`);
+    state.ws = ws;
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ event: registerEvent, uuid }));
+      send('getGlobalSettings', { context: uuid });
+    };
+    ws.onmessage = (msg) => {
+      const raw = msg.data !== undefined ? msg.data : msg;
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch (e) {
+        return;
+      }
+      handleEvent(data);
+    };
+    ws.onerror = (err) => {
+      console.error('WebSocket :', err.message || err);
+    };
+    ws.onclose = () => {
+      state.ws = null;
+    };
+  } catch (err) {
+    console.error('Erreur au démarrage du plugin :', err.message || err);
+  }
 }
 
 connect();
