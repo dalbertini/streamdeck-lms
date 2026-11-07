@@ -27,7 +27,12 @@ globalThis.fetch = async (url, options) => {
     return { ok: true, json: async () => ({ result: { players: [{ playerid: 'aa:bb:cc:dd:ee:ff' }] } }) };
   }
   if (cmd === 'status') {
-    return { ok: true, json: async () => ({ result: { mode: 'play' } }) };
+    return {
+      ok: true,
+      json: async () => ({
+        result: { mode: 'play', playlist_loop: [{ title: 'Ma chanson', artist: 'Mon artiste' }] },
+      }),
+    };
   }
   return { ok: true, json: async () => ({ result: {} }) };
 };
@@ -105,4 +110,28 @@ test('playmedia requires a configured media name and sends playlist play', async
     mediaCalls.some((c) => c[0] === 'playlist' && c[1] === 'play' && c[2] === 'Ma playlist rock'),
     'playlist play with configured media name'
   );
+});
+
+test('nowplaying action displays the current track title on the key', async () => {
+  const context = 'ctx-nowplaying';
+  wsInstance.onmessage({
+    data: JSON.stringify({
+      event: 'willAppear',
+      action: 'com.lyrion.lms.nowplaying',
+      context,
+      payload: { settings: {} },
+    }),
+  });
+  await flush();
+  const titleMsg = wsInstance.sent.find((m) => m.event === 'setTitle' && m.context === context);
+  assert.ok(titleMsg, 'setTitle sent for nowplaying key');
+  assert.strictEqual(titleMsg.payload.title, 'Mon artiste - Ma chanson');
+  wsInstance.onmessage({
+    data: JSON.stringify({
+      event: 'willDisappear',
+      action: 'com.lyrion.lms.nowplaying',
+      context,
+      payload: {},
+    }),
+  });
 });

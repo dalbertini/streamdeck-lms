@@ -112,6 +112,21 @@
           "TitleAlignment": "middle"
         }
       ]
+    },
+    {
+      "UUID": "com.lyrion.lms.nowplaying",
+      "Name": "Titre en cours",
+      "Icon": "icons/nowplaying",
+      "PropertyInspectorPath": "propertyinspector/index.html",
+      "Controllers": ["Keypad"],
+      "States": [
+        {
+          "Image": "icons/nowplaying",
+          "TitleAlignment": "middle",
+          "TitleColor": "#ffffff",
+          "FontSize": "12"
+        }
+      ]
     }
   ]
 }

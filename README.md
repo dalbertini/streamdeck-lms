@@ -13,6 +13,7 @@ Contrôlez votre serveur Lyrion Music Server depuis le Stream Deck via l'API JSO
 | Volume + | `mixer volume +5` |
 | Volume - | `mixer volume -5` |
 | Lire un média | `playlist play <nom>` (nom de playlist, favori ou URL, réglable par touche) |
+| Titre en cours | aucun appui nécessaire : la touche affiche « Artiste - Titre » et se rafraîchit toutes les 5 s (appuyer sur la touche force le rafraîchissement) |
 
 ## Installation
 
@@ -28,6 +29,9 @@ Contrôlez votre serveur Lyrion Music Server depuis le Stream Deck via l'API JSO
    - Pour l'action « Lire un média » : le nom du média à lancer.
 
 ## Remarques
+
+- L'action **Titre en cours** interroge LMS toutes les 5 secondes tant que la touche est visible et affiche `Artiste - Titre` (ou `Arrêt` / `LMS hors ligne`).
+
 
 - Si une erreur survient (serveur injoignable, aucun lecteur…), un triangle rouge s'affiche brièvement sur la touche.
 - Le plugin utilise `fetch` (Node 18+, fourni par Stream Deck 6+) et `WebSocket` global ; sur une ancienne version, exécutez `npm i ws` dans le dossier du plugin.

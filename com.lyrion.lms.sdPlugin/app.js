@@ -14,6 +14,9 @@ const state = {
   playerMac: null,
 };
 
+const NOW_PLAYING_ACTION = 'com.lyrion.lms.nowplaying';
+const nowPlayingTimers = {};
+
 function send(event, payload) {
   if (state.ws && state.ws.readyState === 1) {
     state.ws.send(JSON.stringify(Object.assign({ event }, payload)));
@@ -70,6 +73,39 @@ async function togglePlayPause() {
   return lmsRequest([player, mode === 'play' ? ['pause'] : ['play']]);
 }
 
+async function updateNowPlaying(context) {
+  try {
+    const player = await resolvePlayer();
+    const r = await lmsRequest([player, ['status', '-', 1, 'tags:tal']]);
+    const result = r.result || {};
+    const track = (result.playlist_loop && result.playlist_loop[0]) || {};
+    let title;
+    if (result.mode === 'stop' || !track.title) {
+      title = 'Arrêt';
+    } else {
+      title = track.artist ? `${track.artist} - ${track.title}` : track.title;
+    }
+    send('setTitle', { context, payload: { title, target: 0 } });
+  } catch (err) {
+    send('setTitle', { context, payload: { title: 'LMS hors ligne', target: 0 } });
+  }
+}
+
+function startNowPlaying(context) {
+  if (nowPlayingTimers[context]) {
+    return;
+  }
+  updateNowPlaying(context);
+  nowPlayingTimers[context] = setInterval(() => updateNowPlaying(context), 5000);
+}
+
+function stopNowPlaying(context) {
+  if (nowPlayingTimers[context]) {
+    clearInterval(nowPlayingTimers[context]);
+    delete nowPlayingTimers[context];
+  }
+}
+
 const actions = {
   'com.lyrion.lms.playpause': () => togglePlayPause(),
   'com.lyrion.lms.stop': () => sendCommand(['stop']),
@@ -77,6 +113,7 @@ const actions = {
   'com.lyrion.lms.previous': () => sendCommand(['playlist', 'index', '-1']),
   'com.lyrion.lms.volumeup': () => sendCommand(['mixer', 'volume', '+5']),
   'com.lyrion.lms.volumedown': () => sendCommand(['mixer', 'volume', '-5']),
+  'com.lyrion.lms.nowplaying': (context) => updateNowPlaying(context),
   'com.lyrion.lms.playmedia': async (context) => {
     const media = state.settings[context] && state.settings[context].media;
     if (!media) {
@@ -100,6 +137,18 @@ function handleEvent(data) {
       state.playerMac = null;
       break;
     case 'willAppear':
+      if (payload && payload.settings) {
+        state.settings[context] = payload.settings;
+      }
+      if (action === NOW_PLAYING_ACTION) {
+        startNowPlaying(context);
+      }
+      break;
+    case 'willDisappear':
+      if (action === NOW_PLAYING_ACTION) {
+        stopNowPlaying(context);
+      }
+      break;
     case 'didReceiveSettings':
       if (payload && payload.settings) {
         state.settings[context] = payload.settings;
